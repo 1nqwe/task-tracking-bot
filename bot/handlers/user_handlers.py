@@ -3,7 +3,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
-from bot.database.database import complete_add_task
+from bot.database.database import complete_add_task, add_user, count_user_tasks
 from bot.keyboards.user_keyboards import keyboard_category, menu_keyboard, start_keyboard
 from bot.states.user_states import User
 
@@ -11,6 +11,7 @@ user_router = Router()
 
 @user_router.message(CommandStart())
 async def cmd_start(message: Message):
+    await add_user(message.from_user.id, message.from_user.full_name, message.from_user.username)
     await message.answer('Привет! Я - твой помощник для управления задачами. '
                          'Я помогу создавать, отслеживать и напоминать о важных делах!\n\n'
                          'Не знаешь, с чего начать? Напиши /help — '
@@ -39,7 +40,7 @@ async def set_category(call: CallbackQuery, state: FSMContext):
         data = await state.get_data()
         try:
             await complete_add_task(
-                user_id=call.message.from_user.id,
+                user_id=call.from_user.id,
                 task=data['task'],
             )
             await call.message.edit_text('Данные успешно добавлены!')
@@ -68,3 +69,9 @@ async def complete_add(message: Message, state: FSMContext):
 @user_router.callback_query(F.data == 'menu_kb')
 async def user_menu(call: CallbackQuery):
     await call.message.edit_text('Меню:', reply_markup=menu_keyboard())
+
+@user_router.callback_query(F.data == 'profile')
+async def profile(call: CallbackQuery):
+    await call.message.edit_text(f'Профиль:'
+                                 f'Ваше имя: {call.from_user.full_name}\n'
+                                 f'Количество задач {await count_user_tasks(call.from_user.id)}')
