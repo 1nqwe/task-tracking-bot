@@ -3,8 +3,8 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
-from bot.database.database import complete_add_task, add_user, count_user_tasks
-from bot.keyboards.user_keyboards import keyboard_category, menu_keyboard, start_keyboard
+from bot.database.database import complete_add_task, add_user, count_user_tasks, get_all_user_tasks, get_task_info
+from bot.keyboards.user_keyboards import keyboard_category, menu_keyboard, start_keyboard, my_task_keyboard
 from bot.states.user_states import User
 
 user_router = Router()
@@ -72,6 +72,21 @@ async def user_menu(call: CallbackQuery):
 
 @user_router.callback_query(F.data == 'profile')
 async def profile(call: CallbackQuery):
-    await call.message.edit_text(f'Профиль:'
+    await call.message.edit_text(f'Профиль:\n\n'
                                  f'Ваше имя: {call.from_user.full_name}\n'
                                  f'Количество задач {await count_user_tasks(call.from_user.id)}')
+
+@user_router.callback_query(F.data == 'my_tasks')
+async def my_tasks(call: CallbackQuery):
+    tasks = await get_all_user_tasks(call.from_user.id)
+    await call.message.edit_text('Ваши задачи:', reply_markup=my_task_keyboard(tasks))
+
+@user_router.callback_query(F.data.startswith("task_"))
+async def task_info(call: CallbackQuery):
+    task_id = call.data.split("_")[1]
+    task = await get_task_info(task_id)
+    task_text, category = task
+    message = (f'Задача #{task_id}\n\n'
+               f'Текст: {task_text}\n'
+               f'Категория: {category if category else "без категории"}')
+    await call.message.edit_text(message)

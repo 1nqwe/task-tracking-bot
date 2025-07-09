@@ -1,5 +1,6 @@
 from aiogram import types
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
 def keyboard_category():
@@ -20,5 +21,23 @@ def menu_keyboard():
 def start_keyboard():
     kb = [
         [InlineKeyboardButton(text='Меню', callback_data='menu_kb')],
+    ]
+    return types.InlineKeyboardMarkup(inline_keyboard=kb)
+
+
+def my_task_keyboard(tasks):
+    builder = InlineKeyboardBuilder()
+
+    for task_id, task_text in tasks:
+        builder.button(
+            text=f"{task_text[:15]}...",
+            callback_data=f"task_{task_id}"
+        )
+    builder.adjust(1)
+    return builder.as_markup()
+
+def back_to_tasks_keyboard():
+    kb = [
+        [InlineKeyboardButton(text='Назад к списку', callback_data='my_tasks')]
     ]
     return types.InlineKeyboardMarkup(inline_keyboard=kb)
