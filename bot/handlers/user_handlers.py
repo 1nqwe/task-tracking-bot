@@ -3,6 +3,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
+from bot.database.database import complete_add_task
 from bot.keyboards.user_keyboards import keyboard_category
 from bot.states.user_states import User
 
@@ -35,9 +36,20 @@ async def set_category(call: CallbackQuery, state: FSMContext):
         await state.set_state(User.category)
         await call.message.edit_text('Введите новую категорию')
 
+
 @user_router.message(User.category)
 async def complete_add(message: Message, state: FSMContext):
-    await state.update_data(categoty=message.text)
+    await state.update_data(category=message.text)
     data = await state.get_data()
-    await message.answer(f'{data}')
+    try:
+        await complete_add_task(
+            user_id=message.from_user.id,
+            task=data['task'],
+            category=data['category']
+        )
+        await message.answer('Данные успешно добавлены!')
+    except:
+        await message.answer(f'Ошибка при сохранении')
+    finally:
+        await state.clear()
 
