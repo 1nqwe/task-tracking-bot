@@ -11,4 +11,5 @@ Telegram-бот для учета и управления задачами
 
 **⚙️ Конфигурация**  
 Для работы бота создайте следующие файлы  
-• **config.py** - *Создайте переменную *BOT_TOKEN*=your_telegram_bot_token*
+• **config.py**  
+    - *Создайте переменную *BOT_TOKEN*=your_telegram_bot_token*
