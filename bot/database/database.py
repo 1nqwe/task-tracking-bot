@@ -43,6 +43,6 @@ async def get_all_user_tasks(user_id):
 
 async def get_task_info(task_id):
     async with aiosqlite.connect('bot/database/db.db') as db:
-        async with db.execute("SELECT task, category FROM tasks WHERE id = ?",
+        async with db.execute("SELECT task, category, is_done FROM tasks WHERE id = ?",
                               (task_id, )) as cursor:
             return await cursor.fetchone()

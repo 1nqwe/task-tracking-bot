@@ -33,6 +33,8 @@ def my_task_keyboard(tasks):
             text=f"{task_text[:15]}...",
             callback_data=f"task_{task_id}"
         )
+    builder.button(text="Назад",
+                    callback_data="menu_kb")
     builder.adjust(1)
     return builder.as_markup()
 
@@ -41,3 +43,9 @@ def back_to_tasks_keyboard():
         [InlineKeyboardButton(text='Назад к списку', callback_data='my_tasks')]
     ]
     return types.InlineKeyboardMarkup(inline_keyboard=kb)
+
+def back_to_menu():
+    kb = [
+        [InlineKeyboardButton(text='Назад', callback_data='menu_kb')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=kb)

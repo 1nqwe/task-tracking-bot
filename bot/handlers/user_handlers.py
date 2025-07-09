@@ -4,7 +4,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from bot.database.database import complete_add_task, add_user, count_user_tasks, get_all_user_tasks, get_task_info
-from bot.keyboards.user_keyboards import keyboard_category, menu_keyboard, start_keyboard, my_task_keyboard
+from bot.keyboards.user_keyboards import keyboard_category, menu_keyboard, start_keyboard, my_task_keyboard, \
+    back_to_tasks_keyboard, back_to_menu
 from bot.states.user_states import User
 
 user_router = Router()
@@ -24,7 +25,7 @@ async def cmd_help(message: Message):
 @user_router.callback_query(F.data == 'add_task_kb')
 async def add_task(call: CallbackQuery, state: FSMContext):
     await state.set_state(User.task)
-    await call.message.edit_text('Введите вашу задачу, например, "Купить молоко"')
+    await call.message.edit_text('Введите вашу задачу, например, "Купить молоко"', reply_markup=back_to_menu())
 
 @user_router.message(User.task)
 async def add_category(message: Message, state: FSMContext):
@@ -43,9 +44,9 @@ async def set_category(call: CallbackQuery, state: FSMContext):
                 user_id=call.from_user.id,
                 task=data['task'],
             )
-            await call.message.edit_text('Данные успешно добавлены!')
+            await call.message.edit_text('Данные успешно добавлены!', reply_markup=back_to_menu())
         except:
-            await call.message.edit_text(f'Ошибка при сохранении')
+            await call.message.edit_text(f'Ошибка при сохранении', reply_markup=back_to_menu())
         finally:
             await state.clear()
 
@@ -60,21 +61,24 @@ async def complete_add(message: Message, state: FSMContext):
             task=data['task'],
             category=data['category']
         )
-        await message.answer('Данные успешно добавлены!')
+        await message.answer('Данные успешно добавлены!', reply_markup=back_to_menu())
     except:
-        await message.answer(f'Ошибка при сохранении')
+        await message.answer(f'Ошибка при сохранении', reply_markup=back_to_menu())
     finally:
         await state.clear()
 
 @user_router.callback_query(F.data == 'menu_kb')
-async def user_menu(call: CallbackQuery):
+async def user_menu(call: CallbackQuery, state: FSMContext):
+    if call.data == 'menu_kb':
+        await state.clear()
     await call.message.edit_text('Меню:', reply_markup=menu_keyboard())
 
 @user_router.callback_query(F.data == 'profile')
 async def profile(call: CallbackQuery):
     await call.message.edit_text(f'Профиль:\n\n'
                                  f'Ваше имя: {call.from_user.full_name}\n'
-                                 f'Количество задач {await count_user_tasks(call.from_user.id)}')
+                                 f'Количество задач {await count_user_tasks(call.from_user.id)}',
+                                 reply_markup=back_to_menu())
 
 @user_router.callback_query(F.data == 'my_tasks')
 async def my_tasks(call: CallbackQuery):
@@ -85,8 +89,9 @@ async def my_tasks(call: CallbackQuery):
 async def task_info(call: CallbackQuery):
     task_id = call.data.split("_")[1]
     task = await get_task_info(task_id)
-    task_text, category = task
+    task_text, category, is_done = task
     message = (f'Задача #{task_id}\n\n'
                f'Текст: {task_text}\n'
-               f'Категория: {category if category else "без категории"}')
-    await call.message.edit_text(message)
+               f'Категория: {category if category else "без категории"}\n'
+               f'Статус: {'Выполнена' if is_done == 1 else 'Не выполнена'}')
+    await call.message.edit_text(message, reply_markup=back_to_tasks_keyboard())

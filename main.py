@@ -2,7 +2,6 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 
-from bot.handlers.admin_handlers import admin_router
 from bot.handlers.user_handlers import user_router
 from config import BOT_TOKEN
 
