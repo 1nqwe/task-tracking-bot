@@ -21,7 +21,20 @@ async def cmd_start(message: Message):
 
 @user_router.message(Command('help'))
 async def cmd_help(message: Message):
-    await message.answer('Пропиши /add чтобы добавить новую задачу')
+    await message.answer('<b>📚 Помощь по боту-трекеру задач</b>\n\n'
+                         '<b>📌 Основной функционал:</b>\n'
+                         '• Создание задач с текстом и категорией\n'
+                         '• Просмотр списка всех задач\n'
+                         '• Изменение статуса выполнения (✅/❌)\n'
+                         '• Удаление задач\n\n'
+                         '<b>⚙️ Как работать с задачами:</b>\n'
+                         '1. Создайте задачу через меню\n'
+                         '2. Просматривайте список через меню задач\n'
+                         '3. Нажимайте на задачу для управления:\n'
+                         '   - Изменить статус выполнения\n'
+                         '   - Удалить задачу\n'
+                         '   - Вернуться к списку\n'
+                         'Для начала работы нажмите на кнопку ниже', parse_mode="HTML", reply_markup=start_keyboard())
 
 @user_router.callback_query(F.data == 'add_task_kb')
 async def add_task(call: CallbackQuery, state: FSMContext):
@@ -33,13 +46,17 @@ async def add_task(call: CallbackQuery, state: FSMContext):
 @user_router.message(User.task)
 async def add_category(message: Message, state: FSMContext):
     await state.update_data(task=message.text)
-    await message.answer('Хотите добавить категорию?', reply_markup=keyboard_category())
+    await message.answer('<b>Хотите добавить категорию к задаче?</b>', reply_markup=keyboard_category(), parse_mode="HTML")
 
 @user_router.callback_query(F.data.in_(['yes_category', 'no_category']))
 async def set_category(call: CallbackQuery, state: FSMContext):
     if call.data == 'yes_category':
         await state.set_state(User.category)
-        await call.message.edit_text('Введите новую категорию')
+        await call.message.edit_text('<b>Введите название категории:</b>\n'
+                                     '• 1-2 слова\n'
+                                     '• Например:\n'
+                                     ' - <i>🛒 Покупки</i>\n'
+                                     ' - <i>💼 Работа</i>', parse_mode="HTML")
     else:
         data = await state.get_data()
         try:
@@ -70,11 +87,12 @@ async def complete_add(message: Message, state: FSMContext):
     finally:
         await state.clear()
 
+
 @user_router.callback_query(F.data == 'menu_kb')
 async def user_menu(call: CallbackQuery, state: FSMContext):
     if call.data == 'menu_kb':
         await state.clear()
-    await call.message.edit_text('Меню:', reply_markup=menu_keyboard())
+    await call.message.edit_text('🏠 <b>Главное меню</b>', reply_markup=menu_keyboard(), parse_mode="HTML")
 
 @user_router.callback_query(F.data == 'profile')
 async def profile(call: CallbackQuery):
