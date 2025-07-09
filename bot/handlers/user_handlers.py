@@ -3,9 +3,10 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
-from bot.database.database import complete_add_task, add_user, count_user_tasks, get_all_user_tasks, get_task_info
+from bot.database.database import complete_add_task, add_user, count_user_tasks, get_all_user_tasks, get_task_info, \
+    set_is_done, get_is_done, delete_task
 from bot.keyboards.user_keyboards import keyboard_category, menu_keyboard, start_keyboard, my_task_keyboard, \
-    back_to_tasks_keyboard, back_to_menu
+    task_keyboard, back_to_menu, back_task_menu, back_to_my_tasks
 from bot.states.user_states import User
 
 user_router = Router()
@@ -25,7 +26,9 @@ async def cmd_help(message: Message):
 @user_router.callback_query(F.data == 'add_task_kb')
 async def add_task(call: CallbackQuery, state: FSMContext):
     await state.set_state(User.task)
-    await call.message.edit_text('Введите вашу задачу, например, "Купить молоко"', reply_markup=back_to_menu())
+    await call.message.edit_text("📝 <b>Добавление новой задачи</b>\n"
+                                "└ Введите текст, например: <i>Купить молоко</i>",
+                                parse_mode="HTML", reply_markup=back_to_menu())
 
 @user_router.message(User.task)
 async def add_category(message: Message, state: FSMContext):
@@ -76,9 +79,9 @@ async def user_menu(call: CallbackQuery, state: FSMContext):
 @user_router.callback_query(F.data == 'profile')
 async def profile(call: CallbackQuery):
     await call.message.edit_text(f'Профиль:\n\n'
-                                 f'Ваше имя: {call.from_user.full_name}\n'
-                                 f'Количество задач {await count_user_tasks(call.from_user.id)}',
-                                 reply_markup=back_to_menu())
+                                 f'👤<b>Ваше имя:</b> {call.from_user.full_name}\n'
+                                 f'📊<b>Задач:</b> {await count_user_tasks(call.from_user.id)}',
+                                 reply_markup=back_to_menu(), parse_mode="HTML")
 
 @user_router.callback_query(F.data == 'my_tasks')
 async def my_tasks(call: CallbackQuery):
@@ -90,8 +93,27 @@ async def task_info(call: CallbackQuery):
     task_id = call.data.split("_")[1]
     task = await get_task_info(task_id)
     task_text, category, is_done = task
-    message = (f'Задача #{task_id}\n\n'
+    is_done = await get_is_done(task_id)
+    message = (f'ID задачи #{task_id}\n\n'
                f'Текст: {task_text}\n'
                f'Категория: {category if category else "без категории"}\n'
-               f'Статус: {'Выполнена' if is_done == 1 else 'Не выполнена'}')
-    await call.message.edit_text(message, reply_markup=back_to_tasks_keyboard())
+               f'Статус: {'✅Выполнена' if (is_done == 1) else '❌Не выполнена'}')
+    await call.message.edit_text(message, reply_markup=task_keyboard(task_id))
+
+@user_router.callback_query(F.data.startswith("set_done_"))
+async def set_done(call: CallbackQuery):
+    task_id = call.data.split("_")[2]
+    if await get_is_done(task_id) == 0:
+        await set_is_done(1, task_id)
+        await call.message.edit_text('Вы успешно поменяли статус:\n✅ Выполнено',
+                                     reply_markup=back_task_menu(task_id))
+    else:
+        await set_is_done(0, task_id)
+        await call.message.edit_text('Вы успешно поменяли статус:\n❌ Не выполнено',
+                                     reply_markup=back_task_menu(task_id))
+
+@user_router.callback_query(F.data.startswith("delete_task_"))
+async def del_task(call: CallbackQuery):
+    task_id = call.data.split("_")[2]
+    await delete_task(task_id)
+    await call.message.edit_text('Задача удалена', reply_markup=back_to_my_tasks())

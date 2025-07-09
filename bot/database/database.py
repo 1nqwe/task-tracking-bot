@@ -14,7 +14,7 @@ async def add_user(user_id, full_name, username):
     await connect.close()
 
 async def complete_add_task(user_id, task, category=None):
-    connect = await aiosqlite.connect('bot\database\db.db')
+    connect = await aiosqlite.connect('bot/database/db.db')
     cursor = await connect.cursor()
     if None != category:
         await cursor.execute('INSERT INTO tasks (user_id, task, category) VALUES (?, ?, ?)',
@@ -46,3 +46,25 @@ async def get_task_info(task_id):
         async with db.execute("SELECT task, category, is_done FROM tasks WHERE id = ?",
                               (task_id, )) as cursor:
             return await cursor.fetchone()
+
+async def set_is_done(done, task_id):
+    async with aiosqlite.connect('bot/database/db.db') as db:
+        async with db.execute("UPDATE tasks SET is_done = ? WHERE id = ?", (done, task_id)) as cursor:
+            await db.commit()
+            return await cursor.fetchone()
+
+async def get_is_done(task_id):
+    async with aiosqlite.connect('bot/database/db.db') as db:
+        async with db.execute('SELECT is_done FROM tasks WHERE id = ?', (task_id, )) as cursor:
+            await db.commit()
+            result = await cursor.fetchone()
+            return result[0] if result else None
+
+
+async def delete_task(task_id):
+    connect = await aiosqlite.connect('bot/database/db.db')
+    cursor = await connect.cursor()
+    await cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    await connect.commit()
+    await cursor.close()
+    await connect.close()
