@@ -68,3 +68,24 @@ async def delete_task(task_id):
     await connect.commit()
     await cursor.close()
     await connect.close()
+
+
+
+async def get_user_count():
+    connect = await aiosqlite.connect('bot/database/db.db')
+    cursor = await connect.cursor()
+    user_count = await cursor.execute('SELECT COUNT(*) FROM users')
+    user_count = await user_count.fetchone()
+    await cursor.close()
+    await connect.close()
+    return user_count[0]
+
+
+async def get_all_users_id():
+    connect = await aiosqlite.connect('bot/database/db.db')
+    cursor = await connect.cursor()
+    all_ids = await cursor.execute('SELECT user_id FROM users')
+    all_ids = await all_ids.fetchall()
+    await cursor.close()
+    await connect.close()
+    return all_ids

@@ -30,7 +30,7 @@ def my_task_keyboard(tasks):
 
     for task_id, task_text in tasks:
         builder.button(
-            text=f"{task_text[:15]}...",
+            text=f"{task_text[:25]}...",
             callback_data=f"task_{task_id}"
         )
     builder.button(text="🔙 Назад",
